@@ -1,0 +1,153 @@
+
+CREATE TABLE IF NOT EXISTS album (
+	id SERIAL PRIMARY KEY,
+	name VARCHAR(80) NOT NULL,
+	year INTEGER NOT NULL
+);
+
+
+CREATE TABLE IF NOT EXISTS artist (
+	id SERIAL PRIMARY KEY,
+	name VARCHAR(80) NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS genre (
+	id SERIAL PRIMARY KEY,
+	name VARCHAR(80) NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS track (
+	id SERIAL PRIMARY KEY ,
+	name VARCHAR(80) NOT NULL,
+	duration INTEGER,
+	album INTEGER REFERENCES album(id)
+);
+
+CREATE TABLE IF NOT EXISTS collection (
+	id SERIAL PRIMARY KEY,
+	name VARCHAR(80) NOT NULL,
+	year INTEGER NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS album_artist (
+	album_id INTEGER REFERENCES album(id),
+	artist_id INTEGER REFERENCES artist(id),
+	CONSTRAINT a PRIMARY KEY (album_id, artist_id)
+);
+
+CREATE TABLE IF NOT EXISTS track_collection (
+	track_id INTEGER REFERENCES track(id),
+	collection_id INTEGER REFERENCES collection(id),
+	CONSTRAINT tc PRIMARY KEY (track_id, collection_id)
+);
+
+CREATE TABLE IF NOT EXISTS genre_artist (
+	genre_id INTEGER REFERENCES genre(id),
+	artist_id INTEGER REFERENCES artist(id),
+	CONSTRAINT ga PRIMARY KEY (genre_id, artist_id)
+);
+
+
+INSERT INTO album VALUES (1, 'album_1', 2000);
+INSERT INTO album VALUES (2, 'album_2', 2010);
+INSERT INTO album VALUES (3, 'album_3', 2019);
+INSERT INTO album VALUES (4, 'album_4', 2020);
+
+INSERT INTO track VALUES (1, 'track_1', 180, 1);
+INSERT INTO track VALUES (2, 'track_2', 360, 1);
+INSERT INTO track VALUES (3, 'my_track_3', 222, 2);
+INSERT INTO track VALUES (4, 'track_4', 323, 3);
+INSERT INTO track VALUES (5, 'track_5', 155, 3);
+INSERT INTO track VALUES (6, 'my_track_6', 340, 4);
+INSERT INTO track VALUES (7, 'track_7', 215, 4);
+
+INSERT INTO genre VALUES (1, 'genre_1');
+INSERT INTO genre VALUES (2, 'genre_2');
+INSERT INTO genre VALUES (3, 'genre_3');
+INSERT INTO genre VALUES (4, 'genre_4');
+
+INSERT INTO artist VALUES (1, 'artist_1');
+INSERT INTO artist VALUES (2, 'artist_2');
+INSERT INTO artist VALUES (3, 'best artist_3');
+INSERT INTO artist VALUES (4, 'artist_4');
+INSERT INTO artist VALUES (5, 'artist_5');
+
+INSERT INTO collection VALUES (1, 'collection_1', 2000);
+INSERT INTO collection VALUES (2, 'collection_2', 2010);
+INSERT INTO collection VALUES (3, 'collection_3', 2019);
+INSERT INTO collection VALUES (4, 'collection_4', 2020);
+INSERT INTO collection VALUES (5, 'collection_5', 2020);
+
+INSERT INTO genre_artist VALUES (1, 1);
+INSERT INTO genre_artist VALUES (1, 2);
+INSERT INTO genre_artist VALUES (3, 1);
+INSERT INTO genre_artist VALUES (1, 3);
+INSERT INTO genre_artist VALUES (2, 5);
+INSERT INTO genre_artist VALUES (4, 4);
+
+INSERT INTO album_artist VALUES (1, 5);
+INSERT INTO album_artist VALUES (1, 2);
+INSERT INTO album_artist VALUES (3, 3);
+INSERT INTO album_artist VALUES (4, 1);
+INSERT INTO album_artist VALUES (1, 1);
+INSERT INTO album_artist VALUES (3, 1);
+
+INSERT INTO track_collection VALUES (1, 5);
+INSERT INTO track_collection VALUES (1, 2);
+INSERT INTO track_collection VALUES (2, 3);
+INSERT INTO track_collection VALUES (3, 1);
+INSERT INTO track_collection VALUES (3, 3);
+INSERT INTO track_collection VALUES (6, 4);
+INSERT INTO track_collection VALUES (4, 4);
+INSERT INTO track_collection VALUES (7, 5);
+INSERT INTO track_collection VALUES (3, 2);
+
+SELECT name, duration FROM track
+WHERE duration = (SELECT  MAX(duration) FROM track);
+
+SELECT name FROM track
+WHERE duration >= 210;
+
+SELECT name FROM collection
+WHERE year >= 2018 AND year <= 2020;
+
+SELECT name FROM artist
+WHERE name NOT LIKE '% %';
+
+SELECT name FROM track
+WHERE name LIKE '%my%' OR '%мой%';
+
+
+
+SELECT genre_id, COUNT(*) FROM genre_artist
+GROUP BY genre_id
+ORDER BY COUNT(*) DESC;
+
+SELECT COUNT (*)
+FROM track 
+JOIN album 
+ON track.album=album.id
+WHERE album.year >= 2019 AND album.year <= 2020;
+
+SELECT album.name, AVG(track.duration)
+FROM track 
+JOIN album 
+ON track.album=album.id
+GROUP BY album.name;
+
+SELECT DISTINCT collection.name
+FROM collection  
+JOIN track_collection  ON collection.id=track_collection.collection_id
+JOIN track  ON track.id=track_collection.track_id
+JOIN album  ON album.id=track.album
+JOIN album_artist  ON album.id=album_artist.album_id
+JOIN artist  ON artist.id=album_artist.artist_id
+WHERE artist.name = 'artist_2';
+
+SELECT album.name
+FROM genre_artist
+JOIN artist  ON artist.id=genre_artist.artist_id
+JOIN album_artist  ON artist.id=album_artist.artist_id
+JOIN album ON album.id=album_artist.album_id
+GROUP BY album.name
+HAVING COUNT(*) > 1;
